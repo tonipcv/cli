@@ -9,3 +9,7 @@ export function isValidDate(dateString: string): boolean {
   const date = new Date(dateString);
   return date instanceof Date && !isNaN(date.getTime());
 }
+
+export function generateState() {
+  return Math.random().toString(36).substring(7);
+}
