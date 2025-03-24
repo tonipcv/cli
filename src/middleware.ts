@@ -3,15 +3,13 @@ import { getToken } from 'next-auth/jwt'
 import { NextRequestWithAuth } from 'next-auth/middleware'
 
 export default async function middleware(request: NextRequestWithAuth) {
-  console.log("Middleware - URL:", request.url);
-  console.log("Middleware - Pathname:", request.nextUrl.pathname);
-  
-  // Ignorar requisições para arquivos estáticos
+  // Ignorar requisições para arquivos estáticos e rotas do Instagram
   if (
     request.nextUrl.pathname.includes('manifest.json') ||
     request.nextUrl.pathname.includes('icon.png') ||
     request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.startsWith('/api')
+    request.nextUrl.pathname.startsWith('/api') ||
+    request.nextUrl.pathname.startsWith('/instagram')
   ) {
     return NextResponse.next();
   }
@@ -21,11 +19,9 @@ export default async function middleware(request: NextRequestWithAuth) {
     secret: process.env.NEXTAUTH_SECRET 
   })
   
-  console.log("Middleware - Token:", !!token);
-  
   const isAuthenticated = !!token
 
-  // Lista de rotas protegidas
+  // Lista de rotas protegidas (excluindo Instagram)
   const protectedRoutes = [
     '/checklist',
     '/oneweek', 
@@ -33,8 +29,7 @@ export default async function middleware(request: NextRequestWithAuth) {
     '/tasks',
     '/thoughts',
     '/checkpoints',
-    '/profile',
-    '/instagram'
+    '/profile'
   ]
 
   // Lista de rotas de autenticação
@@ -48,13 +43,8 @@ export default async function middleware(request: NextRequestWithAuth) {
     request.nextUrl.pathname.startsWith(route)
   )
 
-  console.log("Middleware - Protected Route:", isProtectedRoute);
-  console.log("Middleware - Auth Route:", isAuthRoute);
-  console.log("Middleware - Is Authenticated:", isAuthenticated);
-
   // Se for uma rota protegida e o usuário não está autenticado
   if (isProtectedRoute && !isAuthenticated) {
-    console.log("Middleware - Redirecionando para login");
     const redirectUrl = new URL('/auth/signin', request.url)
     redirectUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
@@ -62,10 +52,8 @@ export default async function middleware(request: NextRequestWithAuth) {
 
   // Se for uma rota de auth e o usuário já está autenticado
   if (isAuthRoute && isAuthenticated) {
-    console.log("Middleware - Usuário autenticado em rota de auth");
     const callbackUrl = request.nextUrl.searchParams.get('callbackUrl')
     if (callbackUrl && callbackUrl.startsWith('/')) {
-      console.log("Middleware - Redirecionando para:", callbackUrl);
       return NextResponse.redirect(new URL(callbackUrl, request.url))
     }
     return NextResponse.redirect(new URL('/checklist', request.url))
@@ -74,9 +62,8 @@ export default async function middleware(request: NextRequestWithAuth) {
   return NextResponse.next()
 }
 
-// Configurar o matcher para incluir todas as rotas que precisam de verificação
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
-} 
+}; 
