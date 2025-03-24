@@ -78,21 +78,16 @@ export const authOptions: AuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Se a URL for relativa, use a URL base atual
+      // Permitir URLs relativas
       if (url.startsWith("/")) {
-        // Em desenvolvimento, use localhost
-        if (process.env.NODE_ENV === "development") {
-          return `http://localhost:${process.env.PORT || 3000}${url}`;
-        }
-        // Em produção, use a URL base configurada
         return `${baseUrl}${url}`;
       }
-      // Se a URL for do mesmo domínio que a URL base, permita
+      // Permitir URLs do mesmo domínio
       if (url.startsWith(baseUrl)) {
         return url;
       }
-      // Caso contrário, redirecione para a página inicial
-      return baseUrl;
+      // Caso contrário, redirecionar para a página inicial
+      return `${baseUrl}/checklist`;
     },
     async jwt({ token, user }) {
       if (user) {
@@ -122,6 +117,7 @@ export const authOptions: AuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.booplabs.com' : undefined
       }
     }
   }
