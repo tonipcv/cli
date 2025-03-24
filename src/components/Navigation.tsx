@@ -8,6 +8,8 @@ import {
   CheckIcon,
   CalendarDaysIcon,
   ChatBubbleLeftIcon,
+  ClockIcon,
+  ChatBubbleOvalLeftEllipsisIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -38,7 +40,9 @@ export default function Navigation() {
     '/tasks',
     '/thoughts',
     '/checkpoints',
-    '/profile'
+    '/timeblocking',
+    '/profile',
+    '/instagram'
   ];
 
   // Só mostrar navegação em rotas protegidas
@@ -70,10 +74,27 @@ export default function Navigation() {
           description: 'Matriz de Eisenhower'
         },
         {
+          href: '/timeblocking',
+          label: 'Time Blocking',
+          icon: ClockIcon,
+          description: 'Blocos de tempo'
+        },
+        {
           href: '/thoughts',
           label: 'Pensamentos',
           icon: ChatBubbleLeftIcon,
           description: 'Registro de pensamentos'
+        }
+      ]
+    },
+    {
+      title: "Comunicação",
+      items: [
+        {
+          href: '/instagram/inbox',
+          label: 'Instagram',
+          icon: ChatBubbleOvalLeftEllipsisIcon,
+          description: 'Mensagens do Instagram'
         }
       ]
     }

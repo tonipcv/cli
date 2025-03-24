@@ -177,6 +177,9 @@ model User {
   thoughts               Thought[]
   eisenhowerTasks        EisenhowerTask[]
   pomodoroStars          PomodoroStar[]
+  instagramMessages      InstagramMessage[]
+  instagramThreads       InstagramThread[]
+  instagramAccount       InstagramAccount?
 }
 
 model VerificationToken {
@@ -215,4 +218,54 @@ model PomodoroStar {
 
   @@index([userId])
   @@index([date])
+}
+
+model InstagramMessage {
+  id            String   @id @default(cuid())
+  messageId     String   @unique
+  threadId      String
+  fromId        String
+  toId          String
+  content       String
+  timestamp     DateTime
+  isRead        Boolean  @default(false)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thread        InstagramThread @relation(fields: [threadId], references: [threadId])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([threadId])
+  @@index([userId])
+}
+
+model InstagramThread {
+  id            String   @id @default(cuid())
+  threadId      String   @unique
+  participantId String
+  participantName String
+  participantAvatar String?
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages      InstagramMessage[]
+  lastMessage   String?
+  lastMessageAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model InstagramAccount {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  accessToken   String
+  tokenType     String
+  expiresAt     DateTime
+  scope         String
+  pageId        String?
+  pageAccessToken String?
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
