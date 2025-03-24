@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Logo } from "@/components/ui/logo";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function SignIn() {
+function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/checklist";
@@ -140,5 +140,26 @@ export default function SignIn() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="fixed inset-0 min-h-screen w-full grid place-items-center">
+        <Card className="w-full max-w-[400px] mx-4 bg-black/20 border border-white/10 backdrop-blur-sm">
+          <CardHeader className="space-y-6 pb-6">
+            <div className="flex justify-center">
+              <Logo className="text-center" />
+            </div>
+            <div className="space-y-2 text-center">
+              <h2 className="text-2xl font-light tracking-wide">Loading...</h2>
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+    }>
+      <SignInForm />
+    </Suspense>
   );
 } 
