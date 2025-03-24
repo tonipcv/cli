@@ -3,10 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { threadId: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -30,9 +27,14 @@ export async function GET(
       );
     }
 
+    // Extract threadId from URL
+    const url = new URL(request.url);
+    const segments = url.pathname.split('/');
+    const threadId = segments[segments.length - 1];
+
     // Get messages from Instagram API
     const response = await fetch(
-      `https://graph.instagram.com/${params.threadId}/messages?access_token=${instagramAccount.accessToken}`
+      `https://graph.instagram.com/${threadId}/messages?access_token=${instagramAccount.accessToken}`
     );
 
     if (!response.ok) {
@@ -55,7 +57,7 @@ export async function GET(
           },
           create: {
             messageId: message.id,
-            threadId: params.threadId,
+            threadId,
             fromId: message.from.id,
             toId: message.to.id,
             content: message.text,
