@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     const redirectUri = `${baseUrl}/api/instagram/auth/callback`;
 
-    const url = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code&state=${state}`;
+    const url = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=instagram_basic,instagram_manage_messages,pages_manage_metadata,pages_messaging&response_type=code&state=${state}`;
 
     return NextResponse.json({ url });
   } catch (error) {
