@@ -14,7 +14,8 @@ export default async function middleware(request: NextRequestWithAuth) {
     '/tasks',
     '/thoughts',
     '/checkpoints',
-    '/profile'
+    '/profile',
+    '/instagram'
   ]
 
   // Lista de rotas de autenticação
@@ -37,6 +38,10 @@ export default async function middleware(request: NextRequestWithAuth) {
 
   // Se for uma rota de auth e o usuário já está autenticado
   if (isAuthRoute && isAuthenticated) {
+    const callbackUrl = request.nextUrl.searchParams.get('callbackUrl')
+    if (callbackUrl && callbackUrl.startsWith('/')) {
+      return NextResponse.redirect(new URL(callbackUrl, request.url))
+    }
     return NextResponse.redirect(new URL('/checklist', request.url))
   }
 
@@ -52,6 +57,7 @@ export const config = {
     '/thoughts/:path*',
     '/checkpoints/:path*',
     '/profile/:path*',
-    '/auth/:path*'
+    '/auth/:path*',
+    '/instagram/:path*'
   ]
 } 

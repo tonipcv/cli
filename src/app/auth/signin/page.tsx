@@ -8,10 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function SignIn() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/checklist";
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,20 +30,16 @@ export default function SignIn() {
         email,
         password,
         redirect: false,
+        callbackUrl,
       });
 
       if (result?.error) {
         setError("Email ou senha inválidos");
       } else {
-        router.refresh();
-        router.push("/checklist");
-        router.refresh();
+        router.push(callbackUrl);
       }
-    } catch (
-      /* eslint-disable @typescript-eslint/no-unused-vars */
-      _err
-      /* eslint-enable @typescript-eslint/no-unused-vars */
-    ) {
+    } catch (error) {
+      console.error("Login error:", error);
       setError("Ocorreu um erro ao fazer login");
     } finally {
       setIsLoading(false);
@@ -49,7 +48,7 @@ export default function SignIn() {
 
   const handleGoogleSignIn = () => {
     setIsLoading(true);
-    signIn("google", { callbackUrl: "/checklist" });
+    signIn("google", { callbackUrl });
   };
 
   return (
