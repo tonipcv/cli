@@ -1,19 +1,17 @@
 'use client';
 
-import { Suspense, useState } from "react";
+import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 function SignInForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/checklist";
+  const callbackUrl = searchParams?.get("callbackUrl") || "/checklist";
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,32 +20,26 @@ function SignInForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+    
     setIsLoading(true);
     setError("");
 
     try {
-      const result = await signIn("credentials", {
+      await signIn("credentials", {
         email,
         password,
-        redirect: false,
         callbackUrl,
+        redirect: true
       });
-
-      if (result?.error) {
-        setError("Email ou senha inválidos");
-      } else {
-        router.push(callbackUrl);
-      }
     } catch (error) {
       console.error("Login error:", error);
       setError("Ocorreu um erro ao fazer login");
-    } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = () => {
-    setIsLoading(true);
     signIn("google", { callbackUrl });
   };
 
@@ -74,6 +66,7 @@ function SignInForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
                 className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
               />
             </div>
@@ -85,6 +78,7 @@ function SignInForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isLoading}
                 className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
               />
             </div>
@@ -145,20 +139,22 @@ function SignInForm() {
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={
-      <div className="fixed inset-0 min-h-screen w-full grid place-items-center">
-        <Card className="w-full max-w-[400px] mx-4 bg-black/20 border border-white/10 backdrop-blur-sm">
-          <CardHeader className="space-y-6 pb-6">
-            <div className="flex justify-center">
-              <Logo className="text-center" />
-            </div>
-            <div className="space-y-2 text-center">
-              <h2 className="text-2xl font-light tracking-wide">Loading...</h2>
-            </div>
-          </CardHeader>
-        </Card>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="fixed inset-0 min-h-screen w-full grid place-items-center">
+          <Card className="w-full max-w-[400px] mx-4 bg-black/20 border border-white/10 backdrop-blur-sm">
+            <CardHeader className="space-y-6 pb-6">
+              <div className="flex justify-center">
+                <Logo className="text-center" />
+              </div>
+              <div className="space-y-2 text-center">
+                <h2 className="text-2xl font-light tracking-wide">Loading...</h2>
+              </div>
+            </CardHeader>
+          </Card>
+        </div>
+      }
+    >
       <SignInForm />
     </Suspense>
   );

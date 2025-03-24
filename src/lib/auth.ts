@@ -31,7 +31,7 @@ export const authOptions: AuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials");
+          throw new Error("Email e senha são obrigatórios");
         }
 
         const user = await prisma.user.findUnique({
@@ -41,7 +41,7 @@ export const authOptions: AuthOptions = {
         });
 
         if (!user || !user.password) {
-          throw new Error("Invalid credentials");
+          throw new Error("Email ou senha inválidos");
         }
 
         const isPasswordValid = await compare(
@@ -50,7 +50,7 @@ export const authOptions: AuthOptions = {
         );
 
         if (!isPasswordValid) {
-          throw new Error("Invalid credentials");
+          throw new Error("Email ou senha inválidos");
         }
 
         return {
@@ -78,15 +78,42 @@ export const authOptions: AuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Permite redirecionamentos apenas para URLs do mesmo domínio
-      if (url.startsWith(baseUrl)) return url;
-      // Se a URL for relativa, adiciona o baseUrl
-      else if (url.startsWith("/")) return new URL(url, baseUrl).toString();
+      // Se a URL for relativa, use a URL base atual
+      if (url.startsWith("/")) {
+        // Em desenvolvimento, use localhost
+        if (process.env.NODE_ENV === "development") {
+          return `http://localhost:${process.env.PORT || 3000}${url}`;
+        }
+        // Em produção, use a URL base configurada
+        return `${baseUrl}${url}`;
+      }
+      // Se a URL for do mesmo domínio que a URL base, permita
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      // Caso contrário, redirecione para a página inicial
       return baseUrl;
     },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    }
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",
+  logger: {
+    error(code, metadata) {
+      console.error("NextAuth Error:", code, metadata);
+    },
+    warn(code) {
+      console.warn("NextAuth Warning:", code);
+    },
+    debug(code, metadata) {
+      console.log("NextAuth Debug:", code, metadata);
+    }
+  },
   cookies: {
     sessionToken: {
       name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
@@ -95,7 +122,6 @@ export const authOptions: AuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? '.booplabs.com' : undefined
       }
     }
   }
