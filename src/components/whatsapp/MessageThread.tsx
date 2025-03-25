@@ -1,10 +1,17 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Icons } from "@/components/ui/icons";
-import { whatsappService } from "@/lib/whatsapp";
-import type { Message } from "whatsapp-web.js";
+
+interface Message {
+  id: string;
+  body: string;
+  timestamp: number;
+  fromMe: boolean;
+}
 
 interface MessageThreadProps {
   threadId: string;
@@ -20,11 +27,14 @@ export function MessageThread({ threadId }: MessageThreadProps) {
     const loadMessages = async () => {
       try {
         setIsLoading(true);
-        const chat = await whatsappService.getChatById(threadId);
-        if (chat) {
-          const messages = await chat.fetchMessages({ limit: 50 });
-          setMessages(messages);
+        const response = await fetch(`/api/whatsapp/messages/${threadId}`);
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
         }
+
+        setMessages(data.messages || []);
       } catch (error) {
         console.error("Error loading messages:", error);
       } finally {
@@ -33,17 +43,10 @@ export function MessageThread({ threadId }: MessageThreadProps) {
     };
 
     loadMessages();
-
-    const handleMessage = (message: Message) => {
-      if (message.from === threadId || message.to === threadId) {
-        setMessages(prev => [...prev, message]);
-      }
-    };
-
-    whatsappService.on('message', handleMessage);
+    const interval = setInterval(loadMessages, 5000); // Refresh every 5 seconds
 
     return () => {
-      whatsappService.removeListener('message', handleMessage);
+      clearInterval(interval);
     };
   }, [threadId]);
 
@@ -52,9 +55,22 @@ export function MessageThread({ threadId }: MessageThreadProps) {
 
     try {
       setIsSending(true);
-      const message = await whatsappService.sendMessage(threadId, newMessage);
-      if (message) {
-        setMessages(prev => [...prev, message]);
+      const response = await fetch(`/api/whatsapp/messages/${threadId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: newMessage }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      if (data.message) {
+        setMessages(prev => [...prev, data.message]);
         setNewMessage("");
       }
     } catch (error) {
@@ -78,7 +94,7 @@ export function MessageThread({ threadId }: MessageThreadProps) {
         <div className="space-y-4">
           {messages.map((message) => (
             <div
-              key={message.id._serialized}
+              key={message.id}
               className={`flex ${
                 message.fromMe ? "justify-end" : "justify-start"
               }`}

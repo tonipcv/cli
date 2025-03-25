@@ -1,8 +1,16 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Icons } from "@/components/ui/icons";
-import { whatsappService } from "@/lib/whatsapp";
-import type { Chat } from "whatsapp-web.js";
+
+interface Chat {
+  id: string;
+  name: string;
+  lastMessage: string;
+  timestamp: number;
+  unreadCount: number;
+}
 
 interface ThreadListProps {
   selectedThreadId: string | null;
@@ -16,8 +24,14 @@ export function ThreadList({ selectedThreadId, onThreadSelect }: ThreadListProps
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const chats = await whatsappService.getChats();
-        setChats(chats);
+        const response = await fetch('/api/whatsapp/chats');
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        setChats(data.chats || []);
       } catch (error) {
         console.error("Error fetching chats:", error);
       } finally {
@@ -26,15 +40,10 @@ export function ThreadList({ selectedThreadId, onThreadSelect }: ThreadListProps
     };
 
     fetchChats();
-
-    const handleMessage = () => {
-      fetchChats();
-    };
-
-    whatsappService.on('message', handleMessage);
+    const interval = setInterval(fetchChats, 5000); // Refresh every 5 seconds
 
     return () => {
-      whatsappService.removeListener('message', handleMessage);
+      clearInterval(interval);
     };
   }, []);
 
@@ -59,10 +68,10 @@ export function ThreadList({ selectedThreadId, onThreadSelect }: ThreadListProps
       <div className="space-y-2">
         {chats.map((chat) => (
           <button
-            key={chat.id._serialized}
-            onClick={() => onThreadSelect(chat.id._serialized)}
+            key={chat.id}
+            onClick={() => onThreadSelect(chat.id)}
             className={`w-full p-3 text-left rounded-lg transition-colors ${
-              selectedThreadId === chat.id._serialized
+              selectedThreadId === chat.id
                 ? "bg-primary/10"
                 : "hover:bg-muted"
             }`}
@@ -75,7 +84,7 @@ export function ThreadList({ selectedThreadId, onThreadSelect }: ThreadListProps
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm text-muted-foreground truncate max-w-[70%]">
-                {chat.lastMessage?.body || ''}
+                {chat.lastMessage}
               </span>
               {chat.unreadCount > 0 && (
                 <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
