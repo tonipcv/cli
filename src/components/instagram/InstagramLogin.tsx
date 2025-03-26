@@ -98,19 +98,11 @@ export function InstagramLogin() {
       variant="outline"
       onClick={handleInstagramLogin}
       disabled={isLoading}
-      className="w-full flex items-center gap-2"
+      className="w-full relative group bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-300 text-white flex items-center justify-center gap-2"
     >
-      {isLoading ? (
-        <>
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <span>Connecting...</span>
-        </>
-      ) : (
-        <>
-          <Instagram className="h-5 w-5" />
-          <span>Connect Instagram</span>
-        </>
-      )}
+      <Instagram className="h-4 w-4" />
+      {isLoading ? "Connecting..." : "Connect Instagram"}
+      <div className="absolute inset-0 bg-gradient-to-r from-turquoise/0 via-turquoise/10 to-turquoise/0 opacity-0 group-hover:opacity-100 transition-all duration-700" />
     </Button>
   );
 } 

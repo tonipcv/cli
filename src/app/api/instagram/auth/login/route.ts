@@ -7,7 +7,9 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
-      return NextResponse.redirect(new URL('/login', request.url));
+      const signInUrl = new URL('/auth/signin', request.url);
+      signInUrl.searchParams.set('callbackUrl', '/instagram/inbox');
+      return NextResponse.redirect(signInUrl);
     }
 
     console.log('=== Instagram Login Debug ===');
@@ -33,9 +35,13 @@ export async function GET(request: NextRequest) {
     console.log('=== Facebook OAuth URL ===');
     console.log(authUrl);
 
-    return NextResponse.redirect(authUrl);
+    // Return the URL instead of redirecting
+    return NextResponse.json({ url: authUrl });
   } catch (error) {
     console.error('Error in Instagram login:', error);
-    return NextResponse.redirect(new URL('/error', request.url));
+    return NextResponse.json(
+      { error: 'Failed to initiate Instagram login' },
+      { status: 500 }
+    );
   }
 } 
