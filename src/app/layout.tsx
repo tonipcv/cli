@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { NextAuthProvider } from '@/components/NextAuthProvider'
 import { Toaster } from "@/components/ui/toaster"
+import Script from 'next/script'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -49,6 +50,24 @@ export default function RootLayout({
         <meta name="facebook-domain-verification" content="f5f9ehjwwa4ay3ufdq7g3kbpt5x5p3" />
       </head>
       <body className={`${inter.className} antialiased h-full`}>
+        <Script
+          src="https://connect.facebook.net/en_US/sdk.js"
+          strategy="lazyOnload"
+          crossOrigin="anonymous"
+          nonce="random_nonce"
+        />
+        <Script id="facebook-init" strategy="afterInteractive">
+          {`
+            window.fbAsyncInit = function() {
+              FB.init({
+                appId: '${process.env.NEXT_PUBLIC_FACEBOOK_APP_ID}',
+                cookie: true,
+                xfbml: true,
+                version: 'v18.0'
+              });
+            };
+          `}
+        </Script>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
