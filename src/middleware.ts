@@ -6,6 +6,8 @@ export default async function middleware(request: NextRequestWithAuth) {
   // Log para debug
   console.log('=== Middleware Debug ===');
   console.log('Path:', request.nextUrl.pathname);
+  console.log('Base URL:', request.nextUrl.origin);
+  console.log('Full URL:', request.url);
 
   // Ignorar requisições para arquivos estáticos e rotas do Instagram
   if (
@@ -26,6 +28,7 @@ export default async function middleware(request: NextRequestWithAuth) {
   
   const isAuthenticated = !!token
   console.log('Is authenticated:', isAuthenticated);
+  console.log('Token:', token ? 'Present' : 'Missing');
 
   // Lista de rotas protegidas (excluindo Instagram)
   const protectedRoutes = [
@@ -76,6 +79,13 @@ export default async function middleware(request: NextRequestWithAuth) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }; 

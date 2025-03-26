@@ -85,15 +85,22 @@ export const authOptions: AuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Permitir URLs relativas
+      // Se a URL for relativa, adiciona a baseUrl
       if (url.startsWith("/")) {
         return `${baseUrl}${url}`;
       }
-      // Permitir URLs do mesmo domínio
+      
+      // Se a URL for absoluta e do mesmo domínio, permite
       if (url.startsWith(baseUrl)) {
         return url;
       }
-      // Caso contrário, redirecionar para a página inicial
+
+      // Se a URL for absoluta e de um domínio diferente, redireciona para a página inicial
+      if (url.startsWith("http")) {
+        return `${baseUrl}/checklist`;
+      }
+
+      // Caso contrário, redireciona para a página inicial
       return `${baseUrl}/checklist`;
     },
     async jwt({ token, user }) {
@@ -124,7 +131,7 @@ export const authOptions: AuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? '.booplabs.com' : undefined
+        domain: process.env.NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, '') : undefined
       }
     },
     callbackUrl: {
@@ -133,7 +140,7 @@ export const authOptions: AuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? '.booplabs.com' : undefined
+        domain: process.env.NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, '') : undefined
       }
     },
     csrfToken: {
@@ -143,7 +150,7 @@ export const authOptions: AuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? '.booplabs.com' : undefined
+        domain: process.env.NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, '') : undefined
       }
     }
   }

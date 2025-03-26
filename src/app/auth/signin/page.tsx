@@ -7,34 +7,46 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 function SignInForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get("callbackUrl") || "/checklist";
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isLoading) return;
     
     setIsLoading(true);
-    setError("");
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
     try {
-      await signIn("credentials", {
+      const result = await signIn('credentials', {
         email,
         password,
-        callbackUrl,
-        redirect: true
+        redirect: false,
       });
+
+      if (result?.error) {
+        setError(result.error);
+        setIsLoading(false);
+        return;
+      }
+
+      router.push(callbackUrl);
     } catch (error) {
-      console.error("Login error:", error);
-      setError("Ocorreu um erro ao fazer login");
+      console.error('Login error:', error);
+      setError('Ocorreu um erro ao fazer login');
       setIsLoading(false);
     }
   };
@@ -57,6 +69,11 @@ function SignInForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-500 text-white p-3 rounded-md text-sm">
+                {error}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-zinc-400 font-light">Email</Label>
               <Input
@@ -82,9 +99,6 @@ function SignInForm() {
                 className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
               />
             </div>
-            {error && (
-              <div className="text-red-500 text-sm font-light">{error}</div>
-            )}
             <Button 
               type="submit" 
               className="w-full relative group bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-300 text-white"
