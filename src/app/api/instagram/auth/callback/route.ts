@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       console.error('=== Instagram Callback Error: No Session ===');
       console.error('User not authenticated');
-      return NextResponse.redirect(new URL('/login', request.url));
+      return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -102,88 +102,73 @@ export async function GET(request: NextRequest) {
     console.log('=== Instagram Pages Fetch Success ===');
     console.log('Pages Data:', JSON.stringify(pagesData, null, 2));
 
-    const page = pagesData.data[0]; // Usar a primeira página encontrada
-
-    if (!page) {
-      console.error('=== Instagram Callback Error: No Pages Found ===');
-      console.error('User has no Facebook pages');
+    if (!pagesData.data || pagesData.data.length === 0) {
       throw new Error('No Facebook pages found for this user');
     }
 
-    // Obter o Instagram Business Account conectado à página
-    console.log('=== Instagram Business Account Fetch Attempt ===');
-    const igAccountResponse = await fetch(
-      `https://graph.facebook.com/v20.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`,
+    // Encontrar a página do Instagram
+    const instagramPage = pagesData.data.find((page: any) => page.instagram_business_account);
+    if (!instagramPage) {
+      throw new Error('No Instagram Business Account found for this user');
+    }
+
+    // Obter o token de acesso da página
+    const pageAccessToken = instagramPage.access_token;
+
+    // Obter informações da conta do Instagram
+    const instagramResponse = await fetch(
+      `https://graph.facebook.com/v20.0/${instagramPage.instagram_business_account.id}?fields=id,username,profile_picture_url&access_token=${pageAccessToken}`,
       {
         cache: 'no-store',
         next: { revalidate: 0 },
       }
     );
 
-    if (!igAccountResponse.ok) {
-      const errorData = await igAccountResponse.json();
-      console.error('=== Instagram Callback Error: Business Account Fetch Failed ===');
-      console.error('Status:', igAccountResponse.status);
-      console.error('Status Text:', igAccountResponse.statusText);
+    if (!instagramResponse.ok) {
+      const errorData = await instagramResponse.json();
+      console.error('=== Instagram Callback Error: Instagram Account Fetch Failed ===');
+      console.error('Status:', instagramResponse.status);
+      console.error('Status Text:', instagramResponse.statusText);
       console.error('Error Data:', JSON.stringify(errorData, null, 2));
-      throw new Error(`Failed to get Instagram business account: ${errorData.error?.message || 'Unknown error'} (Code: ${errorData.error?.code})`);
+      throw new Error(`Failed to get Instagram account info: ${errorData.error?.message || 'Unknown error'} (Code: ${errorData.error?.code})`);
     }
 
-    const igAccountData = await igAccountResponse.json();
-    console.log('=== Instagram Business Account Fetch Success ===');
-    console.log('Account Data:', JSON.stringify(igAccountData, null, 2));
-    
-    if (!igAccountData.instagram_business_account) {
-      console.error('=== Instagram Callback Error: No Business Account ===');
-      console.error('Page has no Instagram business account connected');
-      throw new Error('No Instagram business account connected to the page');
-    }
+    const instagramData = await instagramResponse.json();
+    console.log('=== Instagram Account Info ===');
+    console.log('Instagram Data:', JSON.stringify(instagramData, null, 2));
 
-    // Salvar as informações no banco de dados
-    console.log('=== Instagram Database Update Attempt ===');
-    try {
-      await prisma.instagramAccount.upsert({
-        where: {
-          userId: session.user.id,
-        },
-        update: {
-          accessToken: page.access_token,
-          tokenType: 'bearer',
-          expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 dias
-          scope: 'instagram_basic,instagram_manage_messages,pages_messaging',
-          pageId: page.id,
-          pageAccessToken: page.access_token,
-        },
-        create: {
-          userId: session.user.id,
-          accessToken: page.access_token,
-          tokenType: 'bearer',
-          expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 dias
-          scope: 'instagram_basic,instagram_manage_messages,pages_messaging',
-          pageId: page.id,
-          pageAccessToken: page.access_token,
-        },
-      });
-      console.log('=== Instagram Database Update Success ===');
-    } catch (dbError) {
-      console.error('=== Instagram Callback Error: Database Update Failed ===');
-      console.error('Database Error:', dbError);
-      throw new Error('Failed to save Instagram account data to database');
-    }
+    // Salvar ou atualizar a conta do Instagram no banco de dados
+    const instagramAccount = await prisma.instagramAccount.upsert({
+      where: {
+        userId: session.user.id,
+      },
+      update: {
+        accessToken: fbAccessToken,
+        tokenType: 'bearer',
+        expiresAt: new Date(Date.now() + (tokenData.expires_in * 1000)),
+        scope: tokenData.scope,
+        pageId: instagramPage.id,
+        pageAccessToken: pageAccessToken,
+      },
+      create: {
+        userId: session.user.id,
+        accessToken: fbAccessToken,
+        tokenType: 'bearer',
+        expiresAt: new Date(Date.now() + (tokenData.expires_in * 1000)),
+        scope: tokenData.scope,
+        pageId: instagramPage.id,
+        pageAccessToken: pageAccessToken,
+      },
+    });
 
-    // Log de sucesso
-    console.log('=== Instagram Connection Success ===');
-    console.log('User ID:', session.user.id);
-    console.log('Page ID:', page.id);
-    console.log('Instagram Business Account:', igAccountData.instagram_business_account);
+    console.log('=== Instagram Account Saved ===');
+    console.log('Instagram Account:', JSON.stringify(instagramAccount, null, 2));
 
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    // Redirecionar para a página de sucesso
+    return NextResponse.redirect(new URL('/instagram/inbox', request.url));
   } catch (error) {
-    console.error('=== Instagram Callback Error: General Error ===');
-    console.error('Error:', error);
-    console.error('Stack:', error instanceof Error ? error.stack : 'No stack trace');
-    
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.redirect(new URL(`/error?message=${encodeURIComponent(errorMessage)}`, request.url));
+    console.error('=== Instagram Callback Error ===');
+    console.error(error);
+    return NextResponse.redirect(new URL(`/error?message=${encodeURIComponent(error instanceof Error ? error.message : 'Unknown error')}`, request.url));
   }
 } 
