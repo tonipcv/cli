@@ -32,7 +32,9 @@ export async function GET(request: NextRequest) {
       `&state=${state}` +
       `&response_type=code` +
       `&auth_type=rerequest` +
-      `&display=popup`;
+      `&display=popup` +
+      `&client_type=business` +
+      `&app_type=business`;
 
     console.log('=== Facebook OAuth URL ===');
     console.log(authUrl);
