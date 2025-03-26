@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // Get user session
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/error?message=Not authenticated`);
     }
 
@@ -75,11 +75,22 @@ export async function GET(request: NextRequest) {
     const { access_token: longLivedToken } = await longLivedTokenResponse.json();
 
     // Save to database
-    await prisma.user.update({
-      where: { email: session.user.email },
-      data: {
-        instagramAccessToken: longLivedToken,
-        instagramUserId: user_id,
+    await prisma.instagramAccount.upsert({
+      where: {
+        userId: session.user.id,
+      },
+      update: {
+        accessToken: longLivedToken,
+        tokenType: 'bearer',
+        expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
+        scope: 'instagram_basic,instagram_manage_messages',
+      },
+      create: {
+        userId: session.user.id,
+        accessToken: longLivedToken,
+        tokenType: 'bearer',
+        expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
+        scope: 'instagram_basic,instagram_manage_messages',
       },
     });
 

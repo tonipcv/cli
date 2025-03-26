@@ -32,6 +32,12 @@ export async function POST(req: Request) {
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        password: true
+      }
     });
 
     if (existingUser) {
@@ -54,8 +60,15 @@ export async function POST(req: Request) {
         name,
         email,
         password: hashedPassword,
-        emailVerified: null
+        emailVerified: null,
+        verificationCode,
+        verificationCodeExpiry: codeExpiry
       },
+      select: {
+        id: true,
+        email: true,
+        name: true
+      }
     });
 
     // Create verification token

@@ -1,23 +1,22 @@
 import { prisma } from "@/lib/prisma";
 
 export async function refreshInstagramToken(userId: string): Promise<string> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { instagramAccessToken: true }
+  const instagramAccount = await prisma.instagramAccount.findUnique({
+    where: { userId }
   });
 
-  if (!user?.instagramAccessToken) {
+  if (!instagramAccount?.accessToken) {
     throw new Error("No Instagram token found");
   }
 
   try {
     // Verify if token is still valid
     const response = await fetch(
-      `${process.env.INSTAGRAM_GRAPH_API_URL}/me?access_token=${user.instagramAccessToken}`
+      `${process.env.INSTAGRAM_GRAPH_API_URL}/me?access_token=${instagramAccount.accessToken}`
     );
 
     if (response.ok) {
-      return user.instagramAccessToken;
+      return instagramAccount.accessToken;
     }
 
     // If token is invalid, refresh it
@@ -30,7 +29,7 @@ export async function refreshInstagramToken(userId: string): Promise<string> {
         },
         body: new URLSearchParams({
           grant_type: "ig_refresh_token",
-          access_token: user.instagramAccessToken,
+          access_token: instagramAccount.accessToken,
         }),
       }
     );
@@ -42,10 +41,11 @@ export async function refreshInstagramToken(userId: string): Promise<string> {
     const { access_token: newToken } = await refreshResponse.json();
 
     // Update token in database
-    await prisma.user.update({
-      where: { id: userId },
+    await prisma.instagramAccount.update({
+      where: { userId },
       data: {
-        instagramAccessToken: newToken,
+        accessToken: newToken,
+        expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
       },
     });
 

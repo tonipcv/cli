@@ -17,6 +17,9 @@ export function InstagramLogin() {
       const verifyResponse = await fetch('/api/instagram/verify');
       const verifyData = await verifyResponse.json();
 
+      console.log('=== Instagram Verify Response ===');
+      console.log(verifyData);
+
       // Se tiver uma conta conectada e válida, redirecionar para a inbox
       if (verifyData.success) {
         window.location.href = '/instagram/inbox';
@@ -28,10 +31,14 @@ export function InstagramLogin() {
         const response = await fetch('/api/instagram/auth/login');
         
         if (!response.ok) {
-          throw new Error('Failed to get authentication URL');
+          const errorData = await response.json();
+          console.error('Login URL fetch error:', errorData);
+          throw new Error(errorData.error || 'Failed to get authentication URL');
         }
 
         const data = await response.json();
+        console.log('=== Instagram Login Response ===');
+        console.log(data);
 
         if (data.error) {
           throw new Error(data.error);
@@ -58,10 +65,8 @@ export function InstagramLogin() {
             'resizable=yes'
           ].join(',');
 
-          // Log para debug
           console.log('=== Opening Facebook Login Window ===');
           console.log('URL:', data.url);
-          console.log('Debug info:', data.debug);
 
           const loginWindow = window.open(data.url, 'facebook-login', features);
           
@@ -71,17 +76,16 @@ export function InstagramLogin() {
             throw new Error('Popup was blocked. Please allow popups for this site.');
           }
         } else {
-          throw new Error('URL de autenticação não encontrada');
+          throw new Error('Authentication URL not found');
         }
       } else if (verifyData.error) {
-        // Se houver outro tipo de erro
         throw new Error(verifyData.error);
       }
     } catch (error) {
       console.error('Failed to initiate Instagram login:', error);
       toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível conectar com o Instagram. Tente novamente.",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Could not connect to Instagram. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -99,12 +103,12 @@ export function InstagramLogin() {
       {isLoading ? (
         <>
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <span>Conectando...</span>
+          <span>Connecting...</span>
         </>
       ) : (
         <>
           <Instagram className="h-5 w-5" />
-          <span>Conectar Instagram</span>
+          <span>Connect Instagram</span>
         </>
       )}
     </Button>

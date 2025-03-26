@@ -17,6 +17,11 @@ export async function PUT(request: Request) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: {
+        id: true,
+        email: true,
+        name: true
+      }
     })
 
     if (!user) {
@@ -58,6 +63,11 @@ export async function DELETE(request: Request) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: {
+        id: true,
+        email: true,
+        name: true
+      }
     })
 
     if (!user) {

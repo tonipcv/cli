@@ -168,8 +168,6 @@ model User {
   resetTokenExpiry       DateTime?
   verificationCode       String?
   verificationCodeExpiry DateTime?
-  instagramAccessToken   String?
-  instagramUserId        String?         @unique
   accounts               Account[]
   checkpoints            Checkpoint[]
   circles                Circle[]

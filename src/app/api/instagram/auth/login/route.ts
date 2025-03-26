@@ -1,32 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { generateState } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    const state = generateState();
-    const clientId = process.env.INSTAGRAM_CLIENT_ID;
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://ig.booplabs.com' 
-      : process.env.NEXT_PUBLIC_APP_URL;
+    console.log('=== Instagram Login Debug ===');
+    console.log('User:', session.user);
 
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin).replace(/\/$/, '');
     const redirectUri = `${baseUrl}/api/instagram/auth/callback`;
+    const state = Math.random().toString(36).substring(7);
 
-    const url = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=instagram_basic,instagram_manage_messages,pages_manage_metadata,pages_messaging&response_type=code&state=${state}`;
+    console.log('=== Instagram Login URL Parameters ===');
+    console.log('Client ID:', process.env.INSTAGRAM_APP_ID);
+    console.log('Base URL:', baseUrl);
+    console.log('Redirect URI:', redirectUri);
+    console.log('State:', state);
 
-    return NextResponse.json({ url });
+    const authUrl = `https://www.facebook.com/v20.0/dialog/oauth?` +
+      `client_id=${process.env.INSTAGRAM_APP_ID}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&scope=instagram_basic,instagram_manage_messages,pages_show_list,pages_read_engagement,pages_manage_metadata,pages_messaging` +
+      `&state=${state}` +
+      `&response_type=code`;
+
+    console.log('=== Facebook OAuth URL ===');
+    console.log(authUrl);
+
+    return NextResponse.redirect(authUrl);
   } catch (error) {
-    console.error('Error generating Instagram auth URL:', error);
-    return NextResponse.json({ error: 'Failed to generate auth URL' }, { status: 500 });
+    console.error('Error in Instagram login:', error);
+    return NextResponse.redirect(new URL('/error', request.url));
   }
 } 
