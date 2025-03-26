@@ -46,6 +46,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="text-size-adjust" content="none" />
         <link rel="icon" type="image/png" sizes="32x32" href="/icon.png" />
+        <meta name="facebook-domain-verification" content="f5f9ehjwwa4ay3ufdq7g3kbpt5x5p3" />
       </head>
       <body className={`${inter.className} antialiased h-full`}>
         <ThemeProvider
