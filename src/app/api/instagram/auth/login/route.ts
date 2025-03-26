@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&scope=instagram_basic,instagram_manage_messages,pages_show_list,pages_read_engagement,pages_manage_metadata,pages_messaging` +
       `&state=${state}` +
-      `&response_type=code`;
+      `&response_type=code` +
+      `&auth_type=rerequest` +
+      `&display=popup`;
 
     console.log('=== Facebook OAuth URL ===');
     console.log(authUrl);

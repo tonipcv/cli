@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     console.log('Client ID:', process.env.INSTAGRAM_APP_ID);
     console.log('Redirect URI:', process.env.INSTAGRAM_REDIRECT_URI);
 
-    // Troca o código pelo token de acesso do Facebook
+    // Troca o código pelo token de acesso do Facebook usando o fluxo de Authorization Code
     const tokenResponse = await fetch(`https://graph.facebook.com/v20.0/oauth/access_token?` +
       `client_id=${process.env.INSTAGRAM_APP_ID}` +
       `&client_secret=${process.env.INSTAGRAM_APP_SECRET}` +
